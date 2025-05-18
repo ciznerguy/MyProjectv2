@@ -1,0 +1,70 @@
+﻿@page "/login"
+@inject MyProject.Data.MyDBService DbService
+@inject MyProject.Services.UserService UserService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<h3>התחברות</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<EditForm FormName="LoginForm" Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="email">דוא"ל:</label>
+        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">סיסמה:</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">התחבר</button>
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage;
+
+    private void HandleLogin()
+    {
+        var users = DbService.GetAllUsers();
+
+        string email = loginModel.Email?.Trim().ToLower() ?? "";
+        string password = loginModel.Password?.Trim() ?? "";
+
+        var user = users.FirstOrDefault(u =>
+            u.GetEmail()?.Trim().ToLower() == email &&
+            u.GetPassword()?.Trim() == password);
+
+        if (user != null)
+        {
+            Console.WriteLine($"[LOGIN SUCCESS] UserID: {user.GetId()}, Role: {user.GetRole()}");
+            UserService.SetUser(user);
+
+            var role = user.GetRole()?.Trim().ToLower();
+            if (role == "admin")
+                NavigationManager.NavigateTo("/users");
+            else
+                NavigationManager.NavigateTo("/user-dashboard");
+        }
+        else
+        {
+            Console.WriteLine("[LOGIN FAIL] No matching user found.");
+            errorMessage = "שם משתמש או סיסמה שגויים.";
+        }
+    }
+
+
+    private class LoginModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+}

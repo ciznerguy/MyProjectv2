@@ -1,0 +1,52 @@
+﻿@page "/user-dashboard"
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+@inject MyProject.Services.UserService UserService
+
+<PageTitle>פרטי משתמש</PageTitle>
+
+<h3>פרטי משתמש</h3>
+
+@if (user == null)
+{
+    <p>לא מחובר משתמש.</p>
+}
+else
+{
+    <table class="table table-bordered w-auto">
+        <tbody>
+            <tr>
+                <th>שם מלא</th>
+                <td>@user.GetFullName()</td>
+            </tr>
+            <tr>
+                <th>אימייל</th>
+                <td>@user.GetEmail()</td>
+            </tr>
+            <tr>
+                <th>תפקיד</th>
+                <td>@user.GetRole()</td>
+            </tr>
+        </tbody>
+    </table>
+}
+
+@code {
+    private MyProject.Models.User user;
+
+    protected override void OnInitialized()
+    {
+        user = UserService.GetUser();
+        UserService.OnUserChanged += UpdateUser;
+    }
+
+    private void UpdateUser()
+    {
+        user = UserService.GetUser();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        UserService.OnUserChanged -= UpdateUser;
+    }
+}

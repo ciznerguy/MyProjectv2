@@ -1,0 +1,115 @@
+﻿@page "/register"
+@using System.ComponentModel.DataAnnotations
+@inject MyProject.Data.MyDBService DbService
+
+<h3>רישום משתמש חדש</h3>
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div style="color: green;">@SuccessMessage</div>
+}
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div style="color: red;">@ErrorMessage</div>
+}
+
+
+<form action="" method="post" @formname="register">
+    <div class="mb-3">
+        <label>שם מלא:</label>
+        <input type="text" name="FullName" class="form-control" placeholder="הכנס שם מלא" value="@newUser.FullName" />
+    </div>
+    <div class="mb-3">
+        <label>אימייל:</label>
+        <input type="email" name="Email" class="form-control" placeholder="הכנס אימייל" value="@newUser.Email" />
+    </div>
+    <div class="mb-3">
+        <label>סיסמה:</label>
+        <input type="password" name="Password" class="form-control" placeholder="הכנס סיסמה" value="@newUser.Password" />
+    </div>
+    <div class="mb-3">
+        <label>אימות סיסמה:</label>
+        <input type="password" name="ConfirmPassword" class="form-control" placeholder="אימות סיסמה" value="@confirmPassword" />
+    </div>
+
+    <AntiforgeryToken />
+    <button type="submit" class="btn btn-primary">רישום</button>
+</form>
+
+@code {
+
+    [SupplyParameterFromForm(FormName = "register")]
+    public string? FullName { get; set; }
+    [SupplyParameterFromForm(FormName = "register")]
+    public string? Email { get; set; }
+    [SupplyParameterFromForm(FormName = "register")]
+    public string? Password { get; set; }
+    [SupplyParameterFromForm(FormName = "register")]
+    public string? ConfirmPassword { get; set; }
+
+    private string SuccessMessage = string.Empty;
+    private string ErrorMessage = string.Empty;
+
+    // מודל המשתמש – משמש לאחסון הנתונים לאחר קבלת הערכים מהטופס
+    private RegisterUserModel newUser = new RegisterUserModel();
+    private string confirmPassword = string.Empty;
+
+    // כאשר מתקבלים הפרמטרים מהטופס, נעדכן את המודל ונפעיל את הלוגיקה
+    protected override void OnParametersSet()
+    {
+        // אם כל הערכים התקבלו (כלומר, מדובר בבקשת POST עם נתונים)
+        if (!string.IsNullOrWhiteSpace(FullName) &&
+            !string.IsNullOrWhiteSpace(Email) &&
+            !string.IsNullOrWhiteSpace(Password) &&
+            !string.IsNullOrWhiteSpace(ConfirmPassword))
+        {
+            newUser.FullName = FullName;
+            newUser.Email = Email;
+            newUser.Password = Password;
+            confirmPassword = ConfirmPassword;
+
+            HandleRegister();
+        }
+    }
+
+    private void HandleRegister()
+    {
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(newUser.FullName) ||
+            string.IsNullOrWhiteSpace(newUser.Email) ||
+            string.IsNullOrWhiteSpace(newUser.Password) ||
+            string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            ErrorMessage = "יש למלא את כל השדות.";
+            return;
+        }
+
+        if (newUser.Password != confirmPassword)
+        {
+            ErrorMessage = "הסיסמאות אינן תואמות.";
+            return;
+        }
+
+        // קריאה לשירות להוספת המשתמש
+        DbService.AddUser(newUser.FullName, newUser.Email, newUser.Password, "User");
+
+        SuccessMessage = "המשתמש נוסף בהצלחה!";
+        newUser = new RegisterUserModel();
+        confirmPassword = string.Empty;
+    }
+
+    public class RegisterUserModel
+    {
+        [Required(ErrorMessage = "יש למלא את שם המלא")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "יש למלא את האימייל")]
+        [EmailAddress(ErrorMessage = "כתובת אימייל לא חוקית")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "יש למלא את הסיסמה")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,81 @@
+﻿@page "/users"
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+@inject MyProject.Data.MyDBService DbService
+@inject MyProject.Services.UserService UserService
+@inject NavigationManager NavigationManager
+@using MyProject.Models
+
+@if (user == null)
+{
+    <h1>אין גישה</h1>
+    <p>יש להתחבר כמנהל.</p>
+}
+else
+{
+    <h1>ברוך הבא @user.GetFullName() - מנהל האתר</h1>
+
+    <h3>רשימת משתמשים</h3>
+
+    @if (users == null)
+    {
+        <p>טוען נתונים...</p>
+    }
+    else if (users.Count == 0)
+    {
+        <p>אין משתמשים במערכת.</p>
+    }
+    else
+    {
+        <table border="1" cellpadding="5">
+            <thead>
+                <tr>
+                    <th>מזהה</th>
+                    <th>שם מלא</th>
+                    <th>אימייל</th>
+                    <th>סיסמה</th>
+                    <th>תפקיד</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in users)
+                {
+                    <tr>
+                        <td>@u.GetId()</td>
+                        <td>@u.GetFullName()</td>
+                        <td>@u.GetEmail()</td>
+                        <td>@u.GetPassword()</td>
+                        <td>@u.GetRole()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<User> users;
+    private User user;
+    private bool shouldRedirect = false;
+
+    protected override void OnInitialized()
+    {
+        user = UserService.GetUser();
+
+        if (user == null || user.GetRole()?.ToLower() != "admin")
+        {
+            shouldRedirect = true;
+        }
+        else
+        {
+            users = DbService.GetAllUsers();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && shouldRedirect)
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

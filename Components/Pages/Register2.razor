@@ -1,0 +1,113 @@
+﻿@page "/register2"
+@rendermode InteractiveServer
+@layout Components.Layout.EmptyLayout
+
+@using System.ComponentModel.DataAnnotations
+@inject MyProject.Data.MyDBService DbService
+
+<div class="d-flex min-vh-100">
+    <!-- Left Side -->
+    <div class="d-flex flex-column justify-content-center align-items-center p-5" style="width: 40%; background-color: #D9EEE1; color: black;">
+        <h1 class="mb-4">הרשמה לאתר</h1>
+        <p>מלאו את הפרטים </p>
+    </div>
+
+    <!-- Right Side -->
+    <div class="d-flex flex-column justify-content-center align-items-center bg-light p-5" style="width: 60%;">
+        <div style="max-width: 400px; width: 100%;">
+            <h3 class="text-center">רישום משתמש חדש</h3>
+
+            <EditForm Model="@registerModel" OnValidSubmit="@RegisterUser">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">שם מלא</label>
+                    <InputText @bind-Value="registerModel.FullName" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">אימייל</label>
+                    <InputText @bind-Value="registerModel.Email" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">סיסמה</label>
+                    <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">אימות סיסמה</label>
+                    <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">רישום</button>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(SuccessMessage))
+            {
+                <div class="alert alert-success mt-3">@SuccessMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-danger mt-3">@ErrorMessage</div>
+            }
+
+            <div class="text-center mt-3">
+                <a href="/login" class="btn btn-link">כבר יש לך חשבון? התחבר</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class RegisterModel
+    {
+        [Required(ErrorMessage = "הזן שם מלא")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "הזן אימייל")]
+        [EmailAddress(ErrorMessage = "אימייל לא חוקי")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "הזן סיסמה")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "הזן אימות סיסמה")]
+        [Compare("Password", ErrorMessage = "הסיסמאות אינן תואמות")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    private RegisterModel registerModel = new();
+    private string SuccessMessage = string.Empty;
+    private string ErrorMessage = string.Empty;
+
+    private void RegisterUser()
+    {
+        SuccessMessage = string.Empty;
+        ErrorMessage = string.Empty;
+
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            ErrorMessage = "הסיסמאות אינן תואמות";
+            return;
+        }
+
+        try
+        {
+            DbService.AddUser(
+                registerModel.FullName,
+                registerModel.Email,
+                registerModel.Password,
+                "User");
+
+            SuccessMessage = "המשתמש נרשם בהצלחה!";
+            registerModel = new RegisterModel();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error registering user: {ex.Message}");
+            ErrorMessage = "אירעה שגיאה ברישום המשתמש.";
+        }
+    }
+}

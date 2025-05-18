@@ -1,0 +1,32 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject MyProject.Services.UserService UserService
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+<p>Welcome to your new app.</p>
+
+@code {
+    private string GetUserName()
+    {
+        var user = UserService.GetUser();
+        return user == null ? "אורח" : user.GetFullName();
+    }
+
+    protected override void OnInitialized()
+    {
+        UserService.OnUserChanged += Update;
+    }
+
+    private void Update()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        UserService.OnUserChanged -= Update;
+    }
+}

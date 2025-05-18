@@ -1,0 +1,27 @@
+﻿@inject MyProject.Services.UserService UserService
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+
+<small>משתמש נוכחי: @GetUserName()</small>
+
+@code {
+    private string GetUserName()
+    {
+        var user = UserService.GetUser();
+        return user == null ? "אורח" : user.GetFullName();
+    }
+
+    protected override void OnInitialized()
+    {
+        UserService.OnUserChanged += Update;
+    }
+
+    private void Update()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        UserService.OnUserChanged -= Update;
+    }
+}
